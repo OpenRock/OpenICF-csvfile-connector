@@ -20,10 +20,10 @@
  * with the fields enclosed by brackets [] replaced by
  * your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
- * 
+ *
  * Portions Copyrighted 2011 Viliam Repan (lazyman)
  * Portions Copyrighted 2011 Radovan Semancik
- * 
+ *
  * $Id$
  */
 package org.forgerock.openicf.csvfile;
@@ -65,7 +65,7 @@ import static org.forgerock.openicf.csvfile.util.Utils.*;
 @ConnectorClass(displayNameKey = "UI_CONNECTOR_NAME",
 configurationClass = CSVFileConfiguration.class)
 public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsernameOp, CreateOp, DeleteOp, SchemaOp,
-        ScriptOnConnectorOp, ScriptOnResourceOp, SearchOp<String>, SyncOp, TestOp, UpdateAttributeValuesOp {
+        SearchOp<String>, SyncOp, TestOp, UpdateAttributeValuesOp {
 
     /**
      * Setup logging for the {@link CSVFileConnector}.
@@ -144,9 +144,9 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
      * {@inheritDoc}
      */
     public Uid authenticate(final ObjectClass objectClass, final String userName, final GuardedString password, final OperationOptions options) {
-        log.info("authenticate::begin");
+        log.ok("authenticate::begin");
         Uid uid = realAuthenticate(objectClass, userName, password, true);
-        log.info("authenticate::end");
+        log.ok("authenticate::end");
         return uid;
     }
 
@@ -154,9 +154,9 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
      * {@inheritDoc}
      */
     public Uid resolveUsername(final ObjectClass objectClass, final String userName, final OperationOptions options) {
-        log.info("resolveUsername::begin");
+        log.ok("resolveUsername::begin");
         Uid uid = realAuthenticate(objectClass, userName, null, false);
-        log.info("resolveUsername::end");
+        log.ok("resolveUsername::end");
         return uid;
     }
 
@@ -164,7 +164,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
      * {@inheritDoc}
      */
     public Uid create(final ObjectClass objectClass, final Set<Attribute> createAttributes, final OperationOptions options) {
-        log.info("create::begin");
+        log.ok("create::begin");
         isAccount(objectClass);
         notNull(createAttributes, "Attribute set must not be null.");
 
@@ -201,7 +201,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
                 fis.close();
 
                 writer = createWriter(true);
-                if (chars[0] != 10) { // 10 is the decimal value for \n 
+                if (chars[0] != 10) { // 10 is the decimal value for \n
                     writer.write('\n');
                 }
                 writer.append(record);
@@ -216,7 +216,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
             }
         }
 
-        log.info("create::end");
+        log.ok("create::end");
         return uid;
     }
 
@@ -224,16 +224,16 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
      * {@inheritDoc}
      */
     public void delete(final ObjectClass objectClass, final Uid uid, final OperationOptions options) {
-        log.info("delete::begin");
+        log.ok("delete::begin");
         doUpdate(Operation.DELETE, objectClass, uid, null, options);
-        log.info("delete::end");
+        log.ok("delete::end");
     }
 
     /**
      * {@inheritDoc}
      */
     public Schema schema() {
-        log.info("schema::begin");
+        log.ok("schema::begin");
 
         List<String> headers = null;
         BufferedReader reader = null;
@@ -262,32 +262,18 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
         SchemaBuilder builder = new SchemaBuilder(CSVFileConnector.class);
         builder.defineObjectClass(objClassBuilder.build());
 
-        log.info("schema::end");
+        log.ok("schema::end");
         return builder.build();
     }
 
     /**
      * {@inheritDoc}
      */
-    public Object runScriptOnConnector(ScriptContext request, OperationOptions options) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Object runScriptOnResource(ScriptContext request, OperationOptions options) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public FilterTranslator<String> createFilterTranslator(ObjectClass objectClass, OperationOptions options) {
-        log.info("createFilterTranslator::begin");
+        log.ok("createFilterTranslator::begin");
         isAccount(objectClass);
 
-        log.info("createFilterTranslator::end");
+        log.ok("createFilterTranslator::end");
         return new AbstractFilterTranslator<String>() {
         };
     }
@@ -296,7 +282,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
      * {@inheritDoc}
      */
     public void executeQuery(ObjectClass objectClass, String query, ResultsHandler handler, OperationOptions options) {
-        log.info("executeQuery::begin");
+        log.ok("executeQuery::begin");
         isAccount(objectClass);
         notNull(handler, "Results handled object can't be null.");
 
@@ -331,7 +317,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
             }
         }
 
-        log.info("executeQuery::end");
+        log.ok("executeQuery::end");
     }
 
     /**
@@ -363,7 +349,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
      * {@inheritDoc}
      */
     public void sync(ObjectClass objectClass, SyncToken token, SyncResultsHandler handler, final OperationOptions options) {
-        log.info("sync::begin");
+        log.ok("sync::begin");
         isAccount(objectClass);
         notNull(handler, "Sync results handler must not be null.");
 
@@ -374,7 +360,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
             //token doesn't exist, we only create new sync file - we're synchronizing from now on
             createNewSyncFile();
             log.info("Token value was not defined {0}, only creating new sync file, synchronizing from now on.", token);
-            log.info("sync::end");
+            log.ok("sync::end");
             return;
         }
 
@@ -389,17 +375,17 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
         if (!hasFileChanged) {
             log.info("File has not changed after {0} (token value {1}), diff will be skipped.",
                     FORMAT.format(new Date(tokenLongValue)), tokenLongValue);
-            log.info("sync::end");
+            log.ok("sync::end");
             return;
         }
 
         syncReal(tokenLongValue, handler);
-        log.info("sync::end");
+        log.ok("sync::end");
     }
 
     private void syncReal(long tokenLongValue, SyncResultsHandler handler) {
             long timestamp = configuration.getFilePath().lastModified();
-        log.info("Next last sync token value will be {0} ({1}).", timestamp, FORMAT.format(new Date(timestamp)));
+        log.ok("Next last sync token value will be {0} ({1}).", timestamp, FORMAT.format(new Date(timestamp)));
         File syncFile = new File(configuration.getFilePath().getParentFile(),
                 configuration.getFilePath().getName() + "." + timestamp + TMP_EXTENSION);
         synchronized (lock) {
@@ -499,7 +485,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
      * {@inheritDoc}
      */
     public SyncToken getLatestSyncToken(ObjectClass objectClass) {
-        log.info("getLatestSyncToken::begin");
+        log.ok("getLatestSyncToken::begin");
         isAccount(objectClass);
 
         String csvFileName = configuration.getFilePath().getName();
@@ -514,7 +500,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
             token = createNewSyncFile();
         }
 
-        log.info("getLatestSyncToken::end, returning token {0}.", token);
+        log.ok("getLatestSyncToken::end, returning token {0}.", token);
         return new SyncToken(token);
     }
 
@@ -522,14 +508,14 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
      * {@inheritDoc}
      */
     public void test() {
-        log.info("test::begin");
+        log.ok("test::begin");
         log.info("Validating configuration.");
         configuration.validate();
 
         BufferedReader reader = null;
         synchronized (lock) {
             try {
-                log.info("Opening input stream to file {0}.", configuration.getFilePath());
+                log.ok("Opening input stream to file {0}.", configuration.getFilePath());
                 reader = createReader(configuration);
 
                 List<String> headers = readHeader(reader, linePattern, configuration);
@@ -540,14 +526,14 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
                 handleGenericException(ex, "Test configuration was unsuccessful");
             }
             finally {
-                log.info("Closing file input stream.");
+                log.ok("Closing file input stream.");
                 lock.notify();
                 closeReader(reader, null);
             }
         }
 
         log.info("Test configuration was successful.");
-        log.info("test::end");
+        log.ok("test::end");
     }
 
     /**
@@ -557,9 +543,9 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
             Uid uid,
             Set<Attribute> replaceAttributes,
             OperationOptions options) {
-        log.info("update::begin");
+        log.ok("update::begin");
         uid = doUpdate(Operation.UPDATE, objectClass, uid, replaceAttributes, options);
-        log.info("update::end");
+        log.ok("update::end");
         return uid;
     }
 
@@ -570,9 +556,9 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
             Uid uid,
             Set<Attribute> valuesToAdd,
             OperationOptions options) {
-        log.info("addAttributeValues::begin");
+        log.ok("addAttributeValues::begin");
         uid = doUpdate(Operation.ADD_ATTR_VALUE, objectClass, uid, valuesToAdd, options);
-        log.info("addAttributeValues::end");
+        log.ok("addAttributeValues::end");
         return uid;
     }
 
@@ -583,9 +569,9 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
             Uid uid,
             Set<Attribute> valuesToRemove,
             OperationOptions options) {
-        log.info("removeAttributeValues::begin");
+        log.ok("removeAttributeValues::begin");
         uid = doUpdate(Operation.REMOVE_ATTR_VALUE, objectClass, uid, valuesToRemove, options);
-        log.info("removeAttributeValues::end");
+        log.ok("removeAttributeValues::end");
         return uid;
     }
 
@@ -599,7 +585,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
     }
 
     private BufferedWriter createWriter(File path, boolean append) throws IOException {
-        log.info("Creating writer.");
+        log.ok("Creating writer.");
         FileOutputStream fos = new FileOutputStream(path, append);
         OutputStreamWriter out = new OutputStreamWriter(fos, configuration.getEncoding());
         return new BufferedWriter(out);
@@ -754,7 +740,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
     }
 
     private Uid realAuthenticate(ObjectClass objectClass, String username, GuardedString pwd, boolean testPassword) {
-        log.info("realAuthenticate::begin");
+        log.ok("realAuthenticate::begin");
         isAccount(objectClass);
 
         if (username == null) {
@@ -820,13 +806,13 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
                 lock.notify();
                 closeReader(reader, null);
 
-                log.info("realAuthenticate::end");
+                log.ok("realAuthenticate::end");
             }
         }
     }
 
     private Uid doUpdate(Operation operation, ObjectClass objectClass, Uid uid, Set<Attribute> attributes, OperationOptions oo) {
-        log.info("doUpdate::begin");
+        log.ok("doUpdate::begin");
         isAccount(objectClass);
         notNull(uid, "Uid must not be null.");
         if (attributes == null && Operation.DELETE != operation) {
@@ -880,7 +866,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
             }
         }
 
-        log.info("doUpdate::end");
+        log.ok("doUpdate::end");
         return uid;
     }
 
