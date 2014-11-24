@@ -29,7 +29,6 @@
  *  +---------------------------------------------------+ 
  */
 
-import org.identityconnectors.contract.data.groovy.Lazy
 import org.identityconnectors.common.security.GuardedString
 
 // Connector WRONG configuration for ValidateApiOpTests
@@ -45,19 +44,5 @@ configuration{
     password=new GuardedString("__configureme__".toCharArray())
 }
 
-testsuite {
-    // path to bundle jar - property is set by ant - leave it as it is
-    bundleJar=System.getProperty("bundleJar")
-    bundleName=System.getProperty("bundleName")
-    bundleVersion=System.getProperty("bundleVersion")
-    connectorName=""    
-
-    // ValidateApiOpTests:
-    Validate.iterations="3"
-
-    // AuthenticationApiOpTests:
-    Authentication.__ACCOUNT__.username=Lazy.get("i0.Authentication.__ACCOUNT__.__NAME__")
-    Authentication.__ACCOUNT__.wrong.password=new GuardedString("bogus".toCharArray())  
-} // testsuite
 
 HOST="0.0.0.0"

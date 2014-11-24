@@ -1114,6 +1114,7 @@ public class CSVFileConnector implements Connector, AuthenticateOp, ResolveUsern
 
         if (Change.Type.DELETE.equals(change.getType())) {
             builder.setDeltaType(SyncDeltaType.DELETE);
+            builder.setObjectClass(ObjectClass.ACCOUNT);
         } else {
             builder.setDeltaType(SyncDeltaType.CREATE_OR_UPDATE);
 
