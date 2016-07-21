@@ -65,6 +65,7 @@ import org.identityconnectors.framework.common.exceptions.InvalidCredentialExcep
 import org.identityconnectors.framework.common.exceptions.InvalidPasswordException;
 import org.identityconnectors.framework.common.exceptions.UnknownUidException;
 import org.identityconnectors.framework.common.objects.Attribute;
+import org.identityconnectors.framework.common.objects.AttributeBuilder;
 import org.identityconnectors.framework.common.objects.AttributeInfo;
 import org.identityconnectors.framework.common.objects.AttributeInfoBuilder;
 import org.identityconnectors.framework.common.objects.BatchResult;
@@ -385,11 +386,13 @@ public class CSVFileConnector implements Connector, BatchOp, AuthenticateOp, Cre
                     : 0;
             int resultsHandled = pageSize;
 
+            final AttributeBuilder attributeBuilder = new AttributeBuilder();
+            final ConnectorObjectBuilder connectorObjectBuilder = new ConnectorObjectBuilder();
             while ((entry = reader.read(header, processors)) != null) {
-                ConnectorObject object = newConnectorObject(entry);
+                final ConnectorObject object = newConnectorObject(entry, connectorObjectBuilder, attributeBuilder);
                 if (query == null || query.accept(object)) {
                     if (rowOffset-- <= 0) {
-                        if (!handler.handle(newConnectorObject(entry))) {
+                        if (!handler.handle(object)) {
                             break;
                         }
                         if (pageSize > 0 && --resultsHandled <= 0) {
@@ -467,6 +470,9 @@ public class CSVFileConnector implements Connector, BatchOp, AuthenticateOp, Cre
             rwLock.writeLock().unlock();
         }
 
+        final AttributeBuilder attributeBuilder = new AttributeBuilder();
+        final ConnectorObjectBuilder connectorObjectBuilder = new ConnectorObjectBuilder();
+
         // we now have a read-lock unless the above block threw an Exception
         try {
             // Sync deletes
@@ -480,9 +486,10 @@ public class CSVFileConnector implements Connector, BatchOp, AuthenticateOp, Cre
 
                 Map<String, Object> entry;
                 while ((entry = reader.read(originHeader, processors)) != null) {
-                    ConnectorObject originObject = newConnectorObject(entry);
-                    ConnectorObject currentObject = findObjectInFile(null, originObject.getUid());
+                    ConnectorObject currentObject = findObjectInFile(null, getUidValue(entry));
                     if (currentObject == null) {
+                        ConnectorObject originObject = newConnectorObject(entry, connectorObjectBuilder,
+                                attributeBuilder);
                         SyncDelta delta = generateSyncDelta(originObject, null, token);
                         if (delta != null) {
                             if (!handler.handle(delta)) {
@@ -518,8 +525,8 @@ public class CSVFileConnector implements Connector, BatchOp, AuthenticateOp, Cre
                 Map<String, Object> entry;
                 reader.read(header, processors); //consume header
                 while ((entry = reader.read(header, processors)) != null) {
-                    ConnectorObject currentObject = newConnectorObject(entry);
-                    ConnectorObject originObject = findObjectInFile(syncOrigin, currentObject.getUid());
+                    ConnectorObject currentObject = newConnectorObject(entry, connectorObjectBuilder, attributeBuilder);
+                    ConnectorObject originObject = findObjectInFile(syncOrigin, currentObject.getUid().getUidValue());
                     SyncDelta delta = generateSyncDelta(originObject, currentObject, token);
                     if (delta != null) {
                         if (!handler.handle(delta)) {
@@ -817,26 +824,44 @@ public class CSVFileConnector implements Connector, BatchOp, AuthenticateOp, Cre
         return infos;
     }
 
-    private ConnectorObject newConnectorObject(Map<String,Object> entry) {
-        ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
-        for (String col : getHeader()) {
-            if (entry.containsKey(col) && entry.get(col) != null) {
+    /**
+     * Builds a {@link ConnectorObject}, for the given row {@code entry}, with pre-allocated builders to reduce
+     * garbage generation.
+     *
+     * @param entry CSV row
+     * @param objBuilder {@link ConnectorObject} builder
+     * @param attrBuilder {@link Attribute} builder
+     * @return New {@code ConnectorObject} instance
+     */
+    private ConnectorObject newConnectorObject(Map<String,Object> entry, final ConnectorObjectBuilder objBuilder,
+            final AttributeBuilder attrBuilder) {
+        // do not need to call builder.clearAttributes(), because all column keys will always be set/removed here
+        for (final String col : getHeader()) {
+            final Object value = entry.get(col);
+            if (value != null) {
                 if (col.equals(config.getHeaderUid())) {
-                    builder.setUid((String) entry.get(col));
-                    builder.setName((String) entry.get(col));
-                    builder.addAttribute(col, entry.get(col));
+                    objBuilder.setUid((String) value);
+                    objBuilder.setName((String) value);
+                    objBuilder.addAttribute(attrBuilder, col, value);
                 } else if (col.equals(config.getHeaderPassword())) {
-                    builder.addAttribute(OperationalAttributes.PASSWORD_NAME,
-                            new GuardedString(((String) entry.get(col)).toCharArray()));
+                    objBuilder.addAttribute(attrBuilder, OperationalAttributes.PASSWORD_NAME,
+                            new GuardedString(((String) value).toCharArray()));
                 } else {
-                    builder.addAttribute(col, entry.get(col));
+                    objBuilder.addAttribute(attrBuilder, col, value);
                 }
+            } else {
+                // just in case builder previously contained an entry, we clear it here
+                objBuilder.removeAttribute(col);
             }
         }
-        return builder.build();
+        return objBuilder.build();
     }
 
-    private ConnectorObject findObjectInFile(File file, Uid uid) {
+    private String getUidValue(final Map<String,Object> entry) {
+        return (String) entry.get(config.getHeaderUid());
+    }
+
+    private ConnectorObject findObjectInFile(File file, String uidValue) {
         ICsvMapReader reader = null;
 
         final ReentrantReadWriteLock rwLock =
@@ -854,9 +879,8 @@ public class CSVFileConnector implements Connector, BatchOp, AuthenticateOp, Cre
 
             Map<String, Object> entry;
             while ((entry = reader.read(header, processors)) != null) {
-                ConnectorObject object = newConnectorObject(entry);
-                if (object.getUid().getUidValue().equals(uid.getUidValue())) {
-                    return object;
+                if (getUidValue(entry).equals(uidValue)) {
+                    return newConnectorObject(entry, new ConnectorObjectBuilder(), new AttributeBuilder());
                 }
             }
         } catch (FileNotFoundException e) {
