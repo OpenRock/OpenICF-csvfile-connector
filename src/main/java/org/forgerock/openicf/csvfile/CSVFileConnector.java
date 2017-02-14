@@ -11,7 +11,7 @@
  * below the CDDL Header, with the fields enclosed by brackets [] replaced by your
  * own identifying information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2015-2016 ForgeRock AS
+ * Copyright 2015-2017 ForgeRock AS
  * Portions Copyright 2011 Viliam Repan
  * Portions Copyright 2011 Radovan Semancik
  */
@@ -1190,9 +1190,9 @@ public class CSVFileConnector implements Connector, BatchOp, AuthenticateOp, Cre
         return updated;
     }
 
-    private String getAttributeValue(Attribute attr) {
+    private Object getAttributeValue(Attribute attr) {
         return attr != null && attr.getValue() != null && attr.getValue().size() > 0
-                ? (String) attr.getValue().get(0)
+                ? attr.getValue().get(0)
                 : null;
     }
 
